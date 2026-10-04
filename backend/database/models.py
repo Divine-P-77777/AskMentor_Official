@@ -1,3 +1,5 @@
+# NOTE: This file is for documentation/typing reference only. The actual schema is managed manually via SQL files in the /sql directory.
+
 from __future__ import annotations
 
 import enum
@@ -21,10 +23,6 @@ from sqlalchemy.sql import func
 
 Base = declarative_base()
 
-
-# ---------------------------------------------------------------------------
-# Enums — keep in sync with supabase_schema.sql
-# ---------------------------------------------------------------------------
 
 
 class UserRole(str, enum.Enum):
@@ -60,10 +58,6 @@ class MessageRole(str, enum.Enum):
     system    = "system"
 
 
-# ---------------------------------------------------------------------------
-# Payment-related Enums (keep in sync with pricing_config.py tier_ids)
-# ---------------------------------------------------------------------------
-
 class PricingTierEnum(str, enum.Enum):
     starter  = "starter"
     standard = "standard"
@@ -82,10 +76,6 @@ class PaymentStatus(str, enum.Enum):
     failed   = "failed"
     refunded = "refunded"
 
-
-# ---------------------------------------------------------------------------
-# Model: User
-# ---------------------------------------------------------------------------
 
 
 class User(Base):
@@ -111,27 +101,10 @@ class User(Base):
     bots: Mapped[list[Bot]] = relationship("Bot", back_populates="owner", cascade="all, delete-orphan")
 
 
-# ---------------------------------------------------------------------------
-# Model: Bot
-# ---------------------------------------------------------------------------
 
 
 class Bot(Base):
-    """
-    Persona created by an alumni / professional.
-
-    `persona_config` is a flexible JSON blob that stores the form data
-    submitted during onboarding (greeting, tone, expertise, experience, etc.).
-
-    Monetization fields:
-        is_free          → True means users can chat without paying
-        pricing_tier     → The platform preset selected by the mentor (see pricing_config.py)
-        unlock_price     → Final price in ₹ (may differ from tier default within allowed band)
-        credits_per_pack → Number of credits a user receives upon unlock
-        voice_enabled    → Whether ElevenLabs/Sarvam TTS is enabled for this bot
-        subscription_enabled → Future: allow recurring monthly subscription unlocks
-    """
-
+ 
     __tablename__ = "bots"
     __table_args__ = (Index("bots_owner_id_idx", "owner_id"),)
 
@@ -162,12 +135,6 @@ class Bot(Base):
     data_sources: Mapped[list[DataSource]] = relationship(
         "DataSource", back_populates="bot", cascade="all, delete-orphan"
     )
-
-
-# ---------------------------------------------------------------------------
-# Model: IngestionBatch
-# ---------------------------------------------------------------------------
-
 
 class IngestionBatch(Base):
     """

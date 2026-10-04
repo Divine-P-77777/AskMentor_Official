@@ -125,6 +125,15 @@ class ApiService {
     return this.request<Bot>(`/bots/${botId}`);
   }
 
+  async reviewResume(
+    botId: string,
+    file: File
+  ): Promise<{ status: string; bot_id: string; filename: string; review: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    return this.request(`/resume/review/${botId}`, "POST", formData, true);
+  }
+
   async deleteBot(botId: string): Promise<{ status: string; bot_id: string }> {
     return this.request<{ status: string; bot_id: string }>(`/bots/${botId}`, "DELETE");
   }
@@ -255,6 +264,10 @@ class ApiService {
 
   async getBotAccess(botId: string): Promise<any> {
     return this.request<any>(`/payments/access/${botId}`);
+  }
+
+  async unlockFreeBot(botId: string): Promise<{ status: string }> {
+    return this.request<{ status: string }>(`/payments/unlock-free/${botId}`, "POST");
   }
 
   async getWallet(): Promise<any> {

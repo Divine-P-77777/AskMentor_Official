@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect, useLayoutEffect } from "react";
-import { Send, Share2, ArrowLeft, MoreVertical, ShieldCheck, User, RefreshCcw, Mic, Paperclip } from "lucide-react";
+import { Send, Share2, ArrowLeft, MoreVertical, ShieldCheck, X, User, RefreshCcw, FileUp, Radio } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageBubble } from "./MessageBubble";
 import { api } from "../../../services/api";
@@ -12,7 +12,6 @@ import { toast } from "react-toastify";
 import { clsx } from "clsx";
 import Lenis from "lenis";
 import { BotAvatar } from "../../explore/components/BotAvatar";
-import { Radio } from 'lucide-react';
 import { CreditWarningPopup } from "@/components/ui/CreditWarningPopup";
 
 interface ChatInterfaceProps {
@@ -25,10 +24,32 @@ export const ChatInterface = ({ bot }: ChatInterfaceProps) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const dragCounter = useRef(0);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize(); // Set initial value on client
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const lenisRef = useRef<Lenis | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
   const router = useRouter();
+
+  // Auto-resize textarea whenever input changes
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [input]);
 
   // Initialize Local Lenis for the Chat Container
   useLayoutEffect(() => {
@@ -149,6 +170,62 @@ export const ChatInterface = ({ bot }: ChatInterfaceProps) => {
     });
   };
 
+  const processFile = async (file: File) => {
+    const allowed = ["application/pdf", "image/png", "image/jpeg"];
+    if (!allowed.includes(file.type)) {
+      toast.error("Only PDF, PNG, or JPG files are supported.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File too large. Maximum size is 5MB.");
+      return;
+    }
+    setAttachedFile(file);
+  };
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so same file can be re-selected
+    e.target.value = "";
+    await processFile(file);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current -= 1;
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    dragCounter.current = 0;
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      await processFile(file);
+    }
+  };
+
   const [warningPopup, setWarningPopup] = useState<{ isOpen: boolean; mode: 'warning' | 'blocked'; message?: string }>({ isOpen: false, mode: 'warning' });
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
 
@@ -157,7 +234,7 @@ export const ChatInterface = ({ bot }: ChatInterfaceProps) => {
       if (res.credits_remaining !== undefined) {
         setCreditsRemaining(res.credits_remaining);
       }
-      
+
       // Auto-trigger popup on load if they have no access
       if (res.has_access === false) {
         if (res.status === 'expired') {
@@ -172,70 +249,128 @@ export const ChatInterface = ({ bot }: ChatInterfaceProps) => {
   }, [bot.id]);
 
   const handleSend = async () => {
-    if (!input.trim() || isStreaming) return;
+    if ((!input.trim() && !attachedFile) || isStreaming) return;
 
     const userMessage = input.trim();
+    const fileToSend = attachedFile;
+
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+    setAttachedFile(null);
 
-    // Immediate scroll to show the user message
-    lenisRef.current?.scrollTo("bottom", { duration: 0.4 });
+    if (fileToSend) {
+      setMessages(prev => [...prev, { role: "user", content: userMessage ? `📎 **Uploaded File:** ${fileToSend.name}\n\n${userMessage}` : `📎 **Uploaded File:** ${fileToSend.name}` }]);
+      lenisRef.current?.scrollTo("bottom", { duration: 0.4 });
 
-    setIsStreaming(true);
+      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+      setIsUploadingResume(true);
+      toast.info("Uploading and analyzing your file...");
 
-    // Initial assistant message for streaming
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      try {
+        const result = await api.reviewResume(bot.id, fileToSend);
+        toast.success("File reviewed successfully!");
+        setMessages(prev => {
+          const next = [...prev];
+          next[next.length - 1] = { role: "assistant", content: result.review };
+          return next;
+        });
 
-    try {
-      await api.chatWithBot(
-        bot.id,
-        userMessage,
-        (token) => {
-          setMessages((prev) => {
-            const next = prev.slice(0, -1);
-            const last = prev[prev.length - 1];
-            if (last && last.role === "assistant") {
-              return [...next, { ...last, content: last.content + token }];
-            }
-            return prev;
-          });
-        },
-        () => {
-          setIsStreaming(false);
-          if (creditsRemaining !== null) {
-            const newCredits = creditsRemaining - 1;
-            setCreditsRemaining(newCredits);
-            if (newCredits === 1) {
-              setWarningPopup({ isOpen: true, mode: 'warning' });
-            } else if (newCredits === 0) {
-              setWarningPopup({ isOpen: true, mode: 'blocked', message: "You've used all your free credits for this mentor." });
-            }
-          }
-        },
-        (err) => {
-          setIsStreaming(false);
-          if (err && (err.code === "INSUFFICIENT_CREDITS" || err.code === "EXPLORATION_LIMIT_REACHED" || err.code === "ACCESS_EXPIRED")) {
-            setWarningPopup({ isOpen: true, mode: 'blocked', message: err.message });
-            setMessages((prev) => prev.slice(0, -2)); // Revert user message & empty assistant message
-          } else {
-            console.error("Streaming error:", err);
-            toast.error(typeof err === 'string' ? err : (err.message || "Failed to get response. Please try again."));
-            setMessages((prev) => prev.slice(0, -2));
+        if (creditsRemaining !== null) {
+          const newCredits = creditsRemaining - 4;
+          setCreditsRemaining(newCredits);
+          if (newCredits <= 1 && newCredits > 0) {
+            setWarningPopup({ isOpen: true, mode: 'warning' });
+          } else if (newCredits <= 0) {
+            setWarningPopup({ isOpen: true, mode: 'blocked', message: "You've used all your credits for this mentor." });
           }
         }
-      );
-    } catch (err) {
-      console.error("Chat error:", err);
-      setIsStreaming(false);
-      toast.error("An error occurred. Please try again.");
+      } catch (err: any) {
+        setMessages(prev => prev.slice(0, -2));
+        const detail = err?.message || "File review failed. Please try again.";
+        if (detail.includes("INSUFFICIENT_CREDITS") || detail.includes("ACCESS_EXPIRED") || detail.includes("EXPLORATION_LIMIT_REACHED")) {
+          setWarningPopup({ isOpen: true, mode: 'blocked', message: detail });
+        } else {
+          toast.error(detail);
+        }
+      } finally {
+        setIsUploadingResume(false);
+      }
+    } else if (userMessage) {
+      setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+      lenisRef.current?.scrollTo("bottom", { duration: 0.4 });
+      setIsStreaming(true);
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      try {
+        await api.chatWithBot(
+          bot.id,
+          userMessage,
+          (token) => {
+            setMessages((prev) => {
+              const next = prev.slice(0, -1);
+              const last = prev[prev.length - 1];
+              if (last && last.role === "assistant") {
+                return [...next, { ...last, content: last.content + token }];
+              }
+              return prev;
+            });
+          },
+          () => {
+            setIsStreaming(false);
+            if (creditsRemaining !== null) {
+              const newCredits = creditsRemaining - 1;
+              setCreditsRemaining(newCredits);
+              if (newCredits === 1) {
+                setWarningPopup({ isOpen: true, mode: 'warning' });
+              } else if (newCredits === 0) {
+                setWarningPopup({ isOpen: true, mode: 'blocked', message: "You've used all your free credits for this mentor." });
+              }
+            }
+          },
+          (err) => {
+            setIsStreaming(false);
+            if (err && (err.code === "INSUFFICIENT_CREDITS" || err.code === "EXPLORATION_LIMIT_REACHED" || err.code === "ACCESS_EXPIRED")) {
+              setWarningPopup({ isOpen: true, mode: 'blocked', message: err.message });
+              setMessages((prev) => prev.slice(0, -2));
+            } else {
+              console.error("Streaming error:", err);
+              toast.error(typeof err === 'string' ? err : (err.message || "Failed to get response. Please try again."));
+              setMessages((prev) => prev.slice(0, -2));
+            }
+          }
+        );
+      } catch (err) {
+        console.error("Chat error:", err);
+        setIsStreaming(false);
+        toast.error("An error occurred. Please try again.");
+      }
     }
   };
 
   return (
     <div
       data-lenis-prevent
-      className="flex flex-col h-screen bg-zinc-50 overflow-hidden relative"
+      className="flex flex-col h-[100dvh] bg-zinc-50 overflow-hidden relative"
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
+      <AnimatePresence>
+        {isDragging && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[100] bg-orange-500/10 backdrop-blur-sm border-4 border-dashed border-orange-500/50 m-4 md:m-8 rounded-[3rem] flex flex-col items-center justify-center pointer-events-none shadow-2xl"
+          >
+            <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl mb-6 text-orange-500 animate-bounce">
+              <FileUp size={48} />
+            </div>
+            <h3 className="text-3xl font-black text-gray-900 drop-shadow-sm mb-2">Drop your file here</h3>
+            <p className="text-gray-600 font-bold bg-white/50 px-4 py-1.5 rounded-full backdrop-blur-md">Supports PDF, PNG, JPG (Max 5MB)</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Fixed Sticky Header */}
       <header className="fixed top-0 left-0 right-0 z-50 h-20 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-4 md:px-8 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
@@ -320,9 +455,9 @@ export const ChatInterface = ({ bot }: ChatInterfaceProps) => {
       <main
         ref={scrollRef}
         data-lenis-prevent
-        className="flex-1 overflow-y-auto pt-24 pb-60 px-4 md:px-8 relative scrollbar-hide"
+        className="flex-1 overflow-y-auto pt-24 px-4 md:px-8 relative scrollbar-hide"
       >
-        <div className="max-w-4xl mx-auto py-8">
+        <div className="max-w-4xl mx-auto pt-8 pb-48 md:pb-56">
           <AnimatePresence mode="popLayout">
             {isLoadingHistory ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -351,25 +486,44 @@ export const ChatInterface = ({ bot }: ChatInterfaceProps) => {
 
             {/* The Floating Bubble */}
             <div className="relative bg-white/80 backdrop-blur-2xl rounded-[2.5rem] border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.1)] p-2">
-              <div className="flex items-end gap-2 px-2">
-                <div className="flex items-center gap-1 pb-1.5 pl-1">
-                  <button
-                    onClick={() => handleComingSoon("Voice talk")}
-                    className="w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-all active:scale-90"
-                    title="Voice Talk"
-                  >
-                    <Mic size={20} />
+              {attachedFile && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-100/80 rounded-[1.5rem] mx-2 mb-2 w-fit border border-gray-200 shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                  <div className="w-8 h-8 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0">
+                    <FileUp size={16} />
+                  </div>
+                  <div className="flex flex-col max-w-[150px] md:max-w-[200px]">
+                    <span className="text-[13px] font-bold text-gray-900 truncate leading-tight">{attachedFile.name}</span>
+                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">{attachedFile.type.split('/')[1] || 'FILE'}</span>
+                  </div>
+                  <button onClick={() => setAttachedFile(null)} className="ml-1 p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-colors shrink-0">
+                    <X size={14} />
                   </button>
+                </div>
+              )}
+              <div className="flex items-end gap-2 px-2">
+                <div className="flex items-center pb-1.5 pl-1 md:pl-2">
+                  {/* Hidden file input for resume upload */}
+                  <input
+                    ref={resumeInputRef}
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    className="hidden"
+                    onChange={handleResumeUpload}
+                  />
                   <button
-                    onClick={() => handleComingSoon("File upload")}
-                    className="w-10 h-10 rounded-2xl flex items-center justify-center text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-all active:scale-90"
-                    title="Upload File"
+                    onClick={() => resumeInputRef.current?.click()}
+                    disabled={isUploadingResume || isStreaming}
+                    title={isUploadingResume ? "Reviewing resume…" : "Upload resume for AI review (PDF/PNG/JPG)"}
+                    className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-100/80 flex items-center justify-center text-gray-500 hover:bg-orange-100 hover:text-orange-600 transition-all active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed aspect-square shrink-0"
                   >
-                    <Paperclip size={20} />
+                    {isUploadingResume
+                      ? <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                      : <FileUp className="w-4 h-4 md:w-5 md:h-5 shrink-0" />}
                   </button>
                 </div>
 
                 <textarea
+                  ref={textareaRef}
                   rows={1}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -379,49 +533,50 @@ export const ChatInterface = ({ bot }: ChatInterfaceProps) => {
                       handleSend();
                     }
                   }}
-                  placeholder={`Ask ${bot.name} anything...`}
-                  className="flex-1 bg-transparent px-2 py-4 outline-none text-gray-800 resize-none max-h-48 scrollbar-hide text-[15px] font-medium placeholder:text-gray-400"
+                  placeholder={isMobile ? "Ask anything..." : `Ask ${bot.name} anything...`}
+                  className="flex-1 bg-transparent px-2 py-3 outline-none text-gray-800 resize-none max-h-32 md:max-h-48 overflow-y-auto scrollbar-hide text-[15px] font-medium placeholder:text-gray-400 self-center"
+                  style={{ minHeight: "48px" }}
                 />
 
-                <div className="pb-1.5 pr-1.5">
-                  <Link href={`/live/${bot.id}`}> 
+                <div className="pb-1.5 pr-1.5 flex items-center gap-1 md:pr-2">
+                  {(!input.trim() && !attachedFile) && !isStreaming ? (
+                    <Link href={`/live/${bot.id}`} title="Enter live interaction">
+                      <button
+                        className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-100 transition-all active:scale-90"
+                      >
+                        <Radio size={20} />
+                      </button>
+                    </Link>
+                  ) : (
                     <button
-                      className=" text-white p-2 rounded-3xl shadow-lg hover:shadow-orange-500/20 hover:bg-orange-100 hover:text-white transition-all"
-                       >
-                      <Radio color="orange " />
+                      onClick={handleSend}
+                      disabled={(!input.trim() && !attachedFile) || isStreaming}
+                      className={clsx(
+                        "w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all duration-300 active:scale-90 shrink-0",
+                        (!input.trim() && !attachedFile) || isStreaming
+                          ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                          : "bg-gray-900 text-white shadow-md hover:bg-gray-800"
+                      )}
+                    >
+                      <Send size={18} className={clsx(isStreaming && "animate-pulse", "-ml-0.5")} />
                     </button>
-                  </Link>
-                </div>
-
-                <div className="pb-1.5 pr-1.5">
-                  <button
-                    onClick={handleSend}
-                    disabled={!input.trim() || isStreaming}
-                    className={clsx(
-                      "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 active:scale-90 shrink-0",
-                      !input.trim() || isStreaming
-                        ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-                        : "bg-gray-900 text-white shadow-lg hover:shadow-orange-500/20 hover:bg-orange-600"
-                    )}
-                  >
-                    <Send size={20} className={clsx(isStreaming && "animate-pulse")} />
-                  </button>
+                  )}
                 </div>
 
               </div>
+            </div>
 
-              {/* Notice built into the float */}
-              <div className="px-6 pb-2 text-center">
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest opacity-60">
-                  AskMentor can make mistakes. Check important info.
-                </p>
-              </div>
+            {/* Notice below the input bar */}
+            <div className="pt-2 text-center">
+              <p className="text-[11px] text-gray-400 font-medium">
+                AskMentor can make mistakes. Check important info.
+              </p>
             </div>
           </div>
         </div>
       </footer>
 
-      <CreditWarningPopup 
+      <CreditWarningPopup
         isOpen={warningPopup.isOpen}
         mode={warningPopup.mode}
         message={warningPopup.message}

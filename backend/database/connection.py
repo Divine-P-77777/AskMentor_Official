@@ -24,11 +24,7 @@ def get_supabase_client() -> Client:
 
 def get_authed_client(token: str) -> Client:
     """
-    Create a per-request Supabase client authenticated with the user's JWT.
-    
-    This is the standard pattern for FastAPI + Supabase without a service role key.
-    By forwarding the user's own JWT, auth.uid() resolves correctly in all RLS policies,
-    so the user can only read/write their own rows — just like a direct browser request.
+    Create a per-request Supabase client authenticated with the user's JWT
     """
     settings = get_settings()
     client = create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
@@ -39,11 +35,7 @@ def get_authed_client(token: str) -> Client:
 def get_service_client() -> Client:
     """
     Get a Supabase client authenticated with the service role key.
-    
-    IMPORTANT: This bypasses ALL RLS policies. Use ONLY for internal
-    server-side operations (e.g., RAG similarity search, background workers)
-    where no user JWT is available but data access is controlled by
-    application-level bot_id filtering.
+    This bypasses ALL RLS policies
     """
     global _service_client
     if _service_client is None:

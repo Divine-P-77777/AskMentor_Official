@@ -12,9 +12,10 @@ interface UnlockModalProps {
   isOpen: boolean;
   onClose: () => void;
   bot: Bot | null;
+  onUnlocked?: (botId: string) => void;
 }
 
-export function UnlockModal({ isOpen, onClose, bot }: UnlockModalProps) {
+export function UnlockModal({ isOpen, onClose, bot, onUnlocked }: UnlockModalProps) {
   const router = useRouter();
   const { showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -28,21 +29,35 @@ export function UnlockModal({ isOpen, onClose, bot }: UnlockModalProps) {
   const handleUnlock = async () => {
     setIsLoading(true);
 
-    // If paid, this would normally call payment API.
-    // We just route to chat, which handles access or redirects to billing.
+    // Paid bot — route to chat which handles payment redirect internally
     if (!isFree) {
       router.push(`/chat/${bot.id}`);
       return;
     }
 
-    // For free bots, we start exploration (handled in Chat Interface or an explicit API call here)
+    // Free bot — check monthly quota before proceeding
     if (freeUsed >= freeLimit) {
       showError(`You have already unlocked ${freeLimit} free mentors this month.`);
       setIsLoading(false);
       return;
     }
 
-    // Success - redirect to chat
+    try {
+      if (isFree) {
+        // Explicitly unlock the free bot (consumes quota and creates DB record)
+        await import('@/services/api').then(m => m.api.unlockFreeBot(bot.id));
+      }
+    } catch (e: any) {
+      // Access check failed or quota exhausted on the server — show error
+      showError(e?.message || 'Could not verify access. Please try again.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Notify parent to flip this bot's icon from Lock → MessageSquare
+    onUnlocked?.(bot.id);
+    onClose();
+    // Navigate to chat — first message will finalize the access record
     router.push(`/chat/${bot.id}`);
   };
 

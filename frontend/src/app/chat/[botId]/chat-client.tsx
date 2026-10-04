@@ -34,9 +34,23 @@ export default function PublicChatClient({ botId }: { botId: string }) {
                 // Check if bot is ready or private
                 if (data.status !== 'ready') {
                     setError("This persona is currently in draft mode or private.");
-                } else {
-                    setBot(data);
+                    return;
                 }
+
+                // 3. Prevent unauthorized access to paid bots
+                if (!data.is_free) {
+                    try {
+                        const access = await api.getBotAccess(botId);
+                        if (access.has_access === false) {
+                            setError(`This is a Premium Persona. You must unlock it first for ₹${data.unlock_price}. Please visit the Billing page to purchase credits.`);
+                            return;
+                        }
+                    } catch (e) {
+                        console.error("Access check failed", e);
+                    }
+                }
+
+                setBot(data);
             } catch (err) {
                 console.error("Failed to fetch bot:", err);
                 setError("Persona not found or inaccessible.");
@@ -49,7 +63,7 @@ export default function PublicChatClient({ botId }: { botId: string }) {
 
     if (loading) {
         return (
-            <div className="h-screen w-full flex flex-col items-center justify-center bg-zinc-50">
+            <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-zinc-50">
                 <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
@@ -64,7 +78,7 @@ export default function PublicChatClient({ botId }: { botId: string }) {
 
     if (error || !bot) {
         return (
-            <div className="h-screen w-full flex flex-col items-center justify-center bg-white px-6 text-center">
+            <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-white px-6 text-center">
                 <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mb-6 shadow-sm border border-red-100">
                     <ShieldAlert size={32} />
                 </div>
@@ -73,12 +87,21 @@ export default function PublicChatClient({ botId }: { botId: string }) {
                     {error || "We couldn't find the professional persona you're looking for."}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
-                    <Link 
-                        href="/explore"
-                        className="px-8 py-3.5 bg-gray-900 text-white rounded-2xl font-bold hover:shadow-xl hover:scale-105 transition-all"
-                    >
-                        Explore Personas
-                    </Link>
+                    {error?.includes('Premium Persona') ? (
+                        <Link 
+                            href="/billing"
+                            className="px-8 py-3.5 bg-orange-500 text-white rounded-2xl font-bold hover:shadow-xl hover:scale-105 transition-all"
+                        >
+                            Go to Billing
+                        </Link>
+                    ) : (
+                        <Link 
+                            href="/explore"
+                            className="px-8 py-3.5 bg-gray-900 text-white rounded-2xl font-bold hover:shadow-xl hover:scale-105 transition-all"
+                        >
+                            Explore Personas
+                        </Link>
+                    )}
                     <Link 
                         href="/"
                         className="px-8 py-3.5 bg-gray-50 text-gray-700 rounded-2xl font-bold border border-gray-100 hover:bg-gray-100 transition-all"
@@ -95,7 +118,7 @@ export default function PublicChatClient({ botId }: { botId: string }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="h-screen"
+            className="h-[100dvh]"
         >
             <ChatInterface bot={bot} />
         </motion.div>
