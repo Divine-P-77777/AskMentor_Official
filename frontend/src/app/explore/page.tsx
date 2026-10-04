@@ -15,7 +15,9 @@ import {
   LayoutGrid,
   Zap,
   Share2,
-  Lock
+  Lock,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 import { api } from "../../services/api";
 import { Bot } from "../../types";
@@ -34,6 +36,7 @@ export default function ExplorePage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedUnlockBot, setSelectedUnlockBot] = useState<Bot | null>(null);
   const [selectedProfileBot, setSelectedProfileBot] = useState<Bot | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const router = useRouter()
 
 
@@ -117,7 +120,7 @@ export default function ExplorePage() {
       <div className="h-16 lg:h-24" />
 
       {/* Hero Section */}
-      <section className="relative pt-2 pb-10 px-6 lg:px-12 z-10">
+      <section className="relative pt-2 pb-10 px-6 lg:px-12 z-30">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -127,57 +130,98 @@ export default function ExplorePage() {
             className="text-center"
           >
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-gray-900 mb-4 tracking-tighter leading-[0.9]">
-              Elite Mentors <br />
+              Elite Mentors <br className="md:hidden" />
               <span className="bg-gradient-to-r from-gray-900 via-orange-600 to-pink-600 bg-clip-text text-transparent">
                 One Click Away.
               </span>
             </h1>
 
-            <p className="text-base md:text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed font-medium mb-8">
+            <p className="text-sm md:text-base text-gray-500 max-w-2xl lg:max-w-none mx-auto leading-relaxed font-medium mb-6 px-4 md:px-0">
               Connect with hyper-realistic AI twins of industry leaders. Personalized mentorship, available 24/7.
             </p>
 
             {/* Premium Search & Filter Bar */}
-            <div className="max-w-4xl mx-auto">
-              <div className="relative p-2.5 bg-white/80 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.06)] border border-white flex flex-col md:flex-row gap-3">
+            <div className="max-w-3xl mx-auto relative z-50">
+              <div className="relative p-1.5 bg-white/80 backdrop-blur-2xl rounded-[2rem] shadow-[0_10px_30px_rgba(0,0,0,0.06)] border border-white flex flex-col md:flex-row gap-2">
                 <div className="relative flex-1 group">
-                  <div className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center transition-colors group-focus-within:text-orange-500 text-gray-400">
-                    <Search className="w-5 h-5" />
+                  <div className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center transition-colors group-focus-within:text-orange-500 text-gray-400">
+                    <Search className="w-4 h-4" />
                   </div>
                   <input
                     type="text"
                     placeholder="Search by name, expertise, or industry..."
-                    className="w-full pl-16 pr-6 py-5 bg-transparent outline-none text-gray-900 text-lg font-medium placeholder:text-gray-300"
+                    className="w-full pl-12 pr-4 py-3 bg-transparent outline-none text-gray-900 text-sm font-medium placeholder:text-gray-300"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
 
-                <div className="flex gap-2 p-1.5 bg-gray-50/50 rounded-[1.8rem]">
-                  <button className="flex items-center gap-2 px-8 py-4 bg-white text-gray-900 rounded-[1.5rem] font-bold shadow-sm hover:translate-y-[-2px] transition-all">
-                    <Filter className="w-4 h-4" />
-                    <span className="text-sm">Filter</span>
+                <div className="flex gap-2 p-1 bg-gray-50/50 rounded-full w-full md:w-auto relative">
+                  <button 
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-gray-900 rounded-full font-bold shadow-sm hover:bg-gray-50 transition-all text-xs uppercase tracking-wider"
+                  >
+                    <Filter className="w-3 h-3" />
+                    <span>Filter</span>
+                    {isFilterOpen ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
                   </button>
-                  <button className="px-10 py-4 bg-gray-900 text-white rounded-[1.5rem] font-bold hover:bg-orange-600 hover:shadow-orange-500/20 hover:shadow-2xl transition-all">
+                  <button className="flex-1 md:flex-none px-8 py-2.5 bg-gray-900 text-white rounded-full font-bold hover:bg-orange-600 hover:shadow-orange-500/20 hover:shadow-lg transition-all text-xs uppercase tracking-wider">
                     Search
                   </button>
-                </div>
-              </div>
 
-              {/* Enhanced Categories */}
-              <div className="flex flex-wrap justify-center gap-3 mt-6">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-7 py-3 rounded-2xl text-xs font-bold tracking-widest uppercase transition-all duration-300 ${selectedCategory === cat
-                      ? "bg-gray-900 text-white shadow-xl shadow-gray-900/20 scale-105"
-                      : "bg-white text-gray-400 hover:text-gray-900 hover:bg-white/80 border border-transparent hover:border-gray-200"
-                      }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+                  {/* Dropdown Menu */}
+                  <AnimatePresence>
+                    {isFilterOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.1 }}
+                        className="absolute right-0 md:right-auto md:left-0 top-full mt-3 w-full md:w-56 bg-white border border-gray-100 shadow-2xl rounded-3xl overflow-hidden py-3 z-50"
+                      >
+                        <div className="px-5 pb-2 mb-2 border-b border-gray-50 flex items-center justify-between">
+                          <span className="text-[10px] font-black text-gray-400 tracking-widest uppercase">Categories</span>
+                        </div>
+                        <div className="flex flex-col max-h-64 overflow-y-auto px-2">
+                          {categories.map((cat) => (
+                            <label
+                              key={cat}
+                              className="flex items-center gap-3 px-3 py-2.5 hover:bg-orange-50 rounded-xl cursor-pointer group transition-colors text-left"
+                            >
+                              <div className="relative flex items-center justify-center w-4 h-4 rounded-md border-2 border-gray-200 group-hover:border-orange-500 overflow-hidden bg-white shrink-0">
+                                <input
+                                  type="radio"
+                                  name="category"
+                                  className="absolute opacity-0 w-full h-full cursor-pointer"
+                                  checked={selectedCategory === cat}
+                                  onChange={() => {
+                                    setSelectedCategory(cat);
+                                    if (window.innerWidth < 768) setIsFilterOpen(false); // Auto close on mobile
+                                  }}
+                                />
+                                {selectedCategory === cat && (
+                                  <motion.div 
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ duration: 0.1 }}
+                                    className="w-full h-full bg-orange-500 flex items-center justify-center"
+                                  >
+                                    <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                  </motion.div>
+                                )}
+                              </div>
+                              <span className={`text-xs font-bold tracking-wider uppercase transition-colors ${selectedCategory === cat ? 'text-gray-900' : 'text-gray-500 group-hover:text-gray-900'}`}>
+                                {cat}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
           </motion.div>

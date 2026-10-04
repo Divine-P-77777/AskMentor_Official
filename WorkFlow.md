@@ -1,6 +1,7 @@
 AskMentor Codebase Overview
 This document provides a high-level summary of the AskMentor project, detailing its architecture, technology stack, and key components.
 
+
 Architecture
 The project follows a modern full-stack architecture with a decoupled frontend and backend.
 
