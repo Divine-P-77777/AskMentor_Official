@@ -76,7 +76,7 @@ services:
       CELERY_BROKER_URL: "${CELERY_BROKER_URL}"
       # Public URL for OAuth callbacks, self-ping check, etc.
       APP_PUBLIC_URL: "https://api.${GCP_IP_DASHED}.nip.io"
-      ALLOWED_ORIGINS: "https://app.${GCP_IP_DASHED}.nip.io,https://personabot.vercel.app"
+      ALLOWED_ORIGINS: "https://app.${GCP_IP_DASHED}.nip.io,https://www.askmentor.online,https://askmentor.online"
     healthcheck:
       test: ["CMD", "python", "-c",
              "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]

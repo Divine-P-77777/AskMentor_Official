@@ -26,7 +26,7 @@ export async function generateMetadata(
     
     const title = `${bot.name} | AskMentor`;
     const description = bot.description || `Chat with ${bot.name}, an AI-powered persona specialized in ${bot.persona_config.expertise?.join(', ') || 'mentorship'}.`;
-    const ogImage = bot.avatar_url || bot.owner?.avatar_url || "https://personabot.vercel.app/og-image.png";
+    const ogImage = bot.avatar_url || bot.owner?.avatar_url || "https://www.askmentor.online/og-image.png";
 
     return {
       title,
@@ -34,7 +34,7 @@ export async function generateMetadata(
       openGraph: {
         title,
         description,
-        url: `https://personabot.vercel.app/chat/${botId}`,
+        url: `https://www.askmentor.online/chat/${botId}`,
         siteName: "AskMentor",
         images: [
           {

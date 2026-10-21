@@ -40,6 +40,7 @@ from backend.database.payment_queries import (
     get_monthly_exploration,
     get_transaction_by_order_id,
     get_user_bot_access,
+    renew_free_trial_access,
     update_transaction_status,
     upgrade_to_unlocked_access,
     upsert_monthly_exploration,
@@ -55,6 +56,7 @@ from backend.payments.pricing_config import (
     FREE_EXPLORATION,
     PRICING_TIERS,
     DEFAULT_CREDIT_COST,
+    get_monthly_trial_expiry,
 )
 
 logger = logging.getLogger(__name__)
@@ -244,24 +246,50 @@ async def unlock_free_bot(
         raise HTTPException(status_code=400, detail="Bot not found or is not free.")
 
     now = datetime.now(tz=timezone.utc)
+    trial_expires = get_monthly_trial_expiry(now)
     
-    # Check existing access
-    access = await get_user_bot_access(user_id, bot_id, token=token)
-    if access:
-        return {"status": "already_unlocked"}
-        
+    # Check monthly exploration quota
     exploration = await get_monthly_exploration(user_id, token=token)
     explored_bots: list = (exploration or {}).get("mentors_explored", [])
     
-    if bot_id not in explored_bots:
-        if len(explored_bots) >= FREE_EXPLORATION.max_mentors_per_month:
-            raise HTTPException(
-                status_code=402,
-                detail="You have reached your free exploration limit for this month."
+    # Check existing access record
+    access = await get_user_bot_access(user_id, bot_id, token=token)
+
+    if bot_id in explored_bots:
+        # Already used quota this month — ensure access row is active and not expired
+        if access:
+            expires_at_raw = access.get("access_expires_at")
+            is_expired = False
+            if expires_at_raw:
+                try:
+                    from dateutil import parser as dateparser
+                    exp_dt = dateparser.parse(expires_at_raw) if isinstance(expires_at_raw, str) else expires_at_raw
+                    is_expired = exp_dt < now
+                except Exception:
+                    is_expired = False
+            if is_expired or (access.get("credits_allowed", 0) - access.get("credits_used", 0) <= 0):
+                await renew_free_trial_access(access["id"], trial_expires)
+        else:
+            await create_free_trial_access(
+                user_id=user_id,
+                bot_id=bot_id,
+                credits_allowed=FREE_EXPLORATION.free_credits_per_mentor,
+                expires_at=trial_expires,
+                token=token,
             )
-            
-        # Grant free trial access
-        trial_expires = now + timedelta(days=7)
+        return {"status": "unlocked"}
+        
+    # Brand new unlock for this month — check quota limit
+    if len(explored_bots) >= FREE_EXPLORATION.max_mentors_per_month:
+        raise HTTPException(
+            status_code=402,
+            detail="You have reached your free exploration limit for this month."
+        )
+        
+    # Grant free trial access
+    if access:
+        await renew_free_trial_access(access["id"], trial_expires)
+    else:
         await create_free_trial_access(
             user_id=user_id,
             bot_id=bot_id,
@@ -269,7 +297,7 @@ async def unlock_free_bot(
             expires_at=trial_expires,
             token=token,
         )
-        await upsert_monthly_exploration(user_id, bot_id, token=token)
+    await upsert_monthly_exploration(user_id, bot_id, token=token)
         
     return {"status": "unlocked"}
 

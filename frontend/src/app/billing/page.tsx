@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Wallet, TrendingUp, ArrowDownCircle, ArrowUpCircle, Plus,
   CreditCard, Clock, CheckCircle, XCircle, Mic, MessageSquare,
-  AlertCircle, ChevronRight, RefreshCw, Brain, FileText, Check, Landmark, Timer
+  AlertCircle, ChevronRight, RefreshCw, Brain, FileText, Check, Landmark, Timer,
+  Sparkles, ShieldCheck, Lock, HelpCircle, ArrowRight, Compass
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { api } from '../../services/api';
@@ -71,6 +73,7 @@ const txnIcon = (type: string) => {
 // ---------------------------------------------------------------------------
 
 export default function BillingPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [userRole, setUserRole] = useState<'user' | 'alumni' | null>(null);
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [mentorWallet, setMentorWallet] = useState<MentorWalletData | null>(null);
@@ -91,7 +94,12 @@ export default function BillingPage() {
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) {
+        setIsAuthenticated(false);
+        setLoading(false);
+        return;
+      }
+      setIsAuthenticated(true);
 
       const [profileRes, walletRes, txnRes] = await Promise.allSettled([
         api.getCurrentUser(),
@@ -181,18 +189,41 @@ export default function BillingPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200 mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-orange-600" />
+              <span>Decentralized Creator Pricing • Pay-As-You-Go</span>
+            </div>
             <h1 className="text-4xl font-black tracking-tight text-gray-900">Billing</h1>
-            <p className="text-gray-500 mt-1">Manage your wallet, credits, and earnings</p>
+            <p className="text-gray-500 mt-1">Pricing depends directly on each mentor bot creator—no forced monthly plans.</p>
           </div>
-          <button
-            onClick={loadBillingData}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors text-sm text-gray-600 font-medium"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </button>
+          {isAuthenticated && (
+            <button
+              onClick={loadBillingData}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors text-sm text-gray-600 font-medium"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+          )}
+        </div>
+
+        {/* Why Billing & Decentralized Pricing Callout */}
+        <div className="mb-8 p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-orange-50/80 via-pink-50/40 to-white border border-orange-100/90 shadow-xs">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-2xl bg-orange-500 text-white flex items-center justify-center shrink-0 font-bold shadow-sm">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-gray-900 mb-1">
+                Why Billing Instead of Subscription Plans?
+              </h2>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Unlike generic platforms charging rigid $29/mo or $49/mo subscriptions, <strong>AskMentor pricing is set directly by each mentor persona creator</strong>. Many professors and alumni offer their personas completely free of cost. Paid mentors set their own unlock rates and credit packs. You only pay for what you unlock via your prepaid wallet—zero recurring subscription commitments.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -213,109 +244,171 @@ export default function BillingPage() {
 
         {activeTab === 'overview' && (
           <div className="space-y-8">
-            {/* User Wallet Card */}
-            <div className="relative overflow-hidden p-8 rounded-3xl bg-white border border-gray-200 shadow-sm">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-orange-100 rounded-full blur-3xl translate-x-16 -translate-y-16 opacity-50" />
-              <div className="relative">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center border border-orange-100">
-                    <Wallet className="w-6 h-6 text-orange-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500 font-bold uppercase tracking-wider">Your Wallet</p>
-                    <p className="text-sm text-gray-600">Add money → unlock mentors</p>
-                  </div>
+            {/* If Not Authenticated: Prompt to Sign In */}
+            {isAuthenticated === false ? (
+              <div className="relative overflow-hidden p-8 sm:p-10 rounded-3xl bg-white border border-gray-200 shadow-sm text-center">
+                <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center mx-auto mb-4 text-orange-500">
+                  <Wallet className="w-7 h-7" />
                 </div>
-
-                <div className="mb-8">
-                  <p className="text-5xl font-black tracking-tight text-gray-900">
-                    {wallet ? paise(wallet.balance_paise) : '₹0.00'}
-                  </p>
-                  <p className="text-gray-500 font-medium mt-1">Available balance</p>
+                <h3 className="text-2xl font-black text-gray-900 mb-2">Sign in to manage your wallet</h3>
+                <p className="text-gray-600 max-w-md mx-auto text-sm mb-6 leading-relaxed">
+                  Log in to top up your prepaid balance, view unlocked mentor bots, track credit usage, or monitor creator earnings.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <Link
+                    href="/signin"
+                    className="px-8 py-3.5 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold rounded-2xl shadow-md hover:shadow-lg transition-all"
+                  >
+                    Sign In to Your Wallet
+                  </Link>
+                  <Link
+                    href="/explore"
+                    className="px-8 py-3.5 bg-gray-50 text-gray-800 font-bold rounded-2xl border border-gray-200 hover:bg-gray-100 transition-all"
+                  >
+                    Explore Mentors
+                  </Link>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                  <StatBox label="Total Deposited" value={paise(wallet?.lifetime_topup_paise || 0)} />
-                  <StatBox label="Total Spent" value={paise(wallet?.lifetime_spend_paise || 0)} />
-                </div>
-
-                <button
-                  onClick={() => setShowTopup(true)}
-                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 hover:shadow-lg transition-all"
-                >
-                  <Plus className="w-5 h-5" />
-                  Add Money
-                </button>
               </div>
-            </div>
-
-            {/* Mentor Wallet (only for alumni role) */}
-            {userRole === 'alumni' && (
-              <div className="relative overflow-hidden p-8 rounded-3xl bg-white border border-gray-200 shadow-sm">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-100 rounded-full blur-3xl translate-x-16 -translate-y-16 opacity-50" />
-                <div className="relative">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center border border-emerald-100">
-                        <TrendingUp className="w-6 h-6 text-emerald-500" />
+            ) : (
+              <>
+                {/* User Wallet Card */}
+                <div className="relative overflow-hidden p-8 rounded-3xl bg-white border border-gray-200 shadow-sm">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-orange-100 rounded-full blur-3xl translate-x-16 -translate-y-16 opacity-50" />
+                  <div className="relative">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center border border-orange-100">
+                        <Wallet className="w-6 h-6 text-orange-500" />
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500 font-bold uppercase tracking-wider">Mentor Earnings</p>
-                        <p className="text-sm text-gray-600">
-                          You earn {Math.round(MENTOR_REVENUE_SHARE * 100)}% of each unlock
-                        </p>
+                        <p className="text-sm text-gray-500 font-bold uppercase tracking-wider">Your Wallet</p>
+                        <p className="text-sm text-gray-600">Add money → unlock mentors</p>
                       </div>
                     </div>
-                    <div className="sm:text-right">
-                      <p className="text-xs text-gray-500 font-medium">Min. withdrawal</p>
-                      <p className="text-sm font-bold text-gray-900">₹{MENTOR_WITHDRAWAL_THRESHOLD_INR}</p>
-                    </div>
-                  </div>
 
-                  <div className="mb-8">
-                    <p className="text-5xl font-black tracking-tight text-gray-900">
-                      {mentorWallet ? paise(mentorWallet.pending_paise) : '₹0.00'}
-                    </p>
-                    <p className="text-gray-500 font-medium mt-1">Available to withdraw</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-8">
-                    <StatBox label="Total Earned" value={paise(mentorWallet?.total_earned_paise || 0)} />
-                    <StatBox label="Total Withdrawn" value={paise(mentorWallet?.total_withdrawn_paise || 0)} />
-                  </div>
-
-                  {/* Withdrawal progress */}
-                  {mentorWallet && (
                     <div className="mb-8">
-                      <div className="flex justify-between text-sm font-medium text-gray-600 mb-2">
-                        <span>Withdrawal progress</span>
-                        <span>{paise(mentorWallet.pending_paise)} / ₹{MENTOR_WITHDRAWAL_THRESHOLD_INR}</span>
-                      </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                          style={{
-                            width: `${Math.min(100, (mentorWallet.pending_paise / (MENTOR_WITHDRAWAL_THRESHOLD_INR * 100)) * 100)}%`
-                          }}
-                        />
-                      </div>
+                      <p className="text-5xl font-black tracking-tight text-gray-900">
+                        {wallet ? paise(wallet.balance_paise) : '₹0.00'}
+                      </p>
+                      <p className="text-gray-500 font-medium mt-1">Available balance</p>
                     </div>
-                  )}
 
-                  <button
-                    onClick={() => setShowWithdraw(true)}
-                    disabled={!canWithdraw}
-                    className={`inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl font-bold transition-all ${canWithdraw
-                        ? 'bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg'
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                      }`}
-                  >
-                    <ArrowUpCircle className="w-5 h-5" />
-                    {canWithdraw ? 'Withdraw Earnings' : `Need ₹${MENTOR_WITHDRAWAL_THRESHOLD_INR} to withdraw`}
-                  </button>
+                    <div className="grid grid-cols-2 gap-4 mb-8">
+                      <StatBox label="Total Deposited" value={paise(wallet?.lifetime_topup_paise || 0)} />
+                      <StatBox label="Total Spent" value={paise(wallet?.lifetime_spend_paise || 0)} />
+                    </div>
+
+                    <button
+                      onClick={() => setShowTopup(true)}
+                      className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-gray-900 text-white rounded-2xl font-bold hover:bg-gray-800 hover:shadow-lg transition-all"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Add Money
+                    </button>
+                  </div>
                 </div>
-              </div>
+
+                {/* Mentor Wallet (only for alumni role) */}
+                {userRole === 'alumni' && (
+                  <div className="relative overflow-hidden p-8 rounded-3xl bg-white border border-gray-200 shadow-sm">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-100 rounded-full blur-3xl translate-x-16 -translate-y-16 opacity-50" />
+                    <div className="relative">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center border border-emerald-100">
+                            <TrendingUp className="w-6 h-6 text-emerald-500" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500 font-bold uppercase tracking-wider">Mentor Earnings</p>
+                            <p className="text-sm text-gray-600">
+                              You earn {Math.round(MENTOR_REVENUE_SHARE * 100)}% of each unlock
+                            </p>
+                          </div>
+                        </div>
+                        <div className="sm:text-right">
+                          <p className="text-xs text-gray-500 font-medium">Min. withdrawal</p>
+                          <p className="text-sm font-bold text-gray-900">₹{MENTOR_WITHDRAWAL_THRESHOLD_INR}</p>
+                        </div>
+                      </div>
+
+                      <div className="mb-8">
+                        <p className="text-5xl font-black tracking-tight text-gray-900">
+                          {mentorWallet ? paise(mentorWallet.pending_paise) : '₹0.00'}
+                        </p>
+                        <p className="text-gray-500 font-medium mt-1">Available to withdraw</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 mb-8">
+                        <StatBox label="Total Earned" value={paise(mentorWallet?.total_earned_paise || 0)} />
+                        <StatBox label="Total Withdrawn" value={paise(mentorWallet?.total_withdrawn_paise || 0)} />
+                      </div>
+
+                      {/* Withdrawal progress */}
+                      {mentorWallet && (
+                        <div className="mb-8">
+                          <div className="flex justify-between text-sm font-medium text-gray-600 mb-2">
+                            <span>Withdrawal progress</span>
+                            <span>{paise(mentorWallet.pending_paise)} / ₹{MENTOR_WITHDRAWAL_THRESHOLD_INR}</span>
+                          </div>
+                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                              style={{
+                                width: `${Math.min(100, (mentorWallet.pending_paise / (MENTOR_WITHDRAWAL_THRESHOLD_INR * 100)) * 100)}%`
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => setShowWithdraw(true)}
+                        disabled={!canWithdraw}
+                        className={`inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl font-bold transition-all ${canWithdraw
+                            ? 'bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg'
+                            : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                          }`}
+                      >
+                        <ArrowUpCircle className="w-5 h-5" />
+                        {canWithdraw ? 'Withdraw Earnings' : `Need ₹${MENTOR_WITHDRAWAL_THRESHOLD_INR} to withdraw`}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
+
+            {/* How Creator Pricing Works - 3 Pillars */}
+            <div className="grid sm:grid-cols-3 gap-6">
+              <div className="p-6 rounded-3xl bg-gray-50 border border-gray-200">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-800 flex items-center justify-center font-bold mb-3 text-sm">
+                  1
+                </div>
+                <h4 className="font-bold text-gray-900 mb-1">Bot Owners Set Rates</h4>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Creators decide if access is free or requires an unlock pack. There are no platform-wide forced fees.
+                </p>
+              </div>
+
+              <div className="p-6 rounded-3xl bg-gray-50 border border-gray-200">
+                <div className="w-10 h-10 rounded-xl bg-pink-100 text-pink-800 flex items-center justify-center font-bold mb-3 text-sm">
+                  2
+                </div>
+                <h4 className="font-bold text-gray-900 mb-1">Pay-As-You-Go</h4>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Top up your wallet with flexible amounts via Cashfree. Credits are deducted per query without recurring locks.
+                </p>
+              </div>
+
+              <div className="p-6 rounded-3xl bg-gray-50 border border-gray-200">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold mb-3 text-sm">
+                  3
+                </div>
+                <h4 className="font-bold text-gray-900 mb-1">70% Creator Revenue</h4>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  70% of each unlock fee is paid directly to the mentor&apos;s earnings wallet for fast bank transfer.
+                </p>
+              </div>
+            </div>
 
             {/* Credit Cost Reference */}
             <div className="p-8 rounded-3xl bg-gray-50 border border-gray-200">

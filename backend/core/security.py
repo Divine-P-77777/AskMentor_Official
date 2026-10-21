@@ -156,8 +156,14 @@ async def get_optional_user(
             
             user_id = payload.get("sub")
             user = await get_user_by_id(user_id, token=token)
-            if user:
-                user["_token"] = token
+            if not user:
+                user = {
+                    "id": user_id,
+                    "email": payload.get("email"),
+                    "is_new": True,
+                    "onboarding_completed": False
+                }
+            user["_token"] = token
             return user
         except:
             return None

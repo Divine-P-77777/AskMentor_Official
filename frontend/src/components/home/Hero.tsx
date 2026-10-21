@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, Sparkles, GraduationCap, CheckCircle2, Compass, BookOpen, Briefcase, Code2, MessageCircle } from 'lucide-react';
+import { ArrowRight, Sparkles, GraduationCap, CheckCircle2, Compass, MessageCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
@@ -10,7 +10,6 @@ export function Hero() {
     const card1Ref = useRef<HTMLDivElement>(null);
     const card2Ref = useRef<HTMLDivElement>(null);
     const imageRef = useRef<HTMLDivElement>(null);
-    const pillsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const ctx = gsap.context(() => {
@@ -21,7 +20,7 @@ export function Hero() {
             if (textRef.current) {
                 const elements = gsap.utils.toArray(Array.from(textRef.current.children));
                 gsap.set(elements, { opacity: 0, y: 32 });
-                tl.to(elements, { y: 0, opacity: 1, stagger: 0.1, duration: 0.75 }, 0.1);
+                tl.to(elements, { y: 0, opacity: 1, stagger: 0.12, duration: 0.75 }, 0.1);
             }
 
             if (imageRef.current) {
@@ -48,30 +47,15 @@ export function Hero() {
                     stagger: { each: 0.7, repeat: -1, yoyo: true }
                 });
             }
-
-            if (pillsRef.current) {
-                tl.fromTo(pillsRef.current,
-                    { opacity: 0, y: 12 },
-                    { opacity: 1, y: 0, duration: 0.6 },
-                    0.8
-                );
-            }
         }, heroRef);
 
         return () => ctx.revert();
     }, []);
 
-    const mentorshipAreas = [
-        { icon: GraduationCap, label: 'Academic Guidance' },
-        { icon: Briefcase, label: 'Career Coaching' },
-        { icon: Code2, label: 'Tech & Programming' },
-        { icon: BookOpen, label: 'Research Mentorship' },
-    ];
-
     return (
         <section
             ref={heroRef}
-            className="relative min-h-screen flex items-center overflow-hidden pt-20 pb-12 px-4 sm:px-6 lg:px-8"
+            className="relative min-h-[90vh] lg:min-h-[88vh] flex items-center overflow-hidden pt-20 pb-10 px-4 sm:px-6 lg:px-8"
             style={{ background: 'linear-gradient(135deg, #fff7f0 0%, #fdf2f8 45%, #ffffff 100%)' }}
         >
             {/* Background ambient blobs */}
@@ -141,24 +125,8 @@ export function Hero() {
                             natural text or voice conversations.
                         </p>
 
-                        {/* Mentorship Area Pills */}
-                        <div ref={pillsRef} className="space-y-3">
-                            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Mentorship Areas</p>
-                            <div className="flex flex-wrap gap-2.5">
-                                {mentorshipAreas.map(({ icon: Icon, label }) => (
-                                    <div
-                                        key={label}
-                                        className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-white border border-gray-100 text-xs font-semibold text-gray-700 hover:border-orange-300 hover:text-orange-600 transition-all duration-200 cursor-default shadow-sm"
-                                    >
-                                        <Icon className="w-3.5 h-3.5 text-orange-400" />
-                                        {label}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
                         {/* CTA Buttons */}
-                        <div className="flex flex-col sm:flex-row gap-4 pt-1">
+                        <div className="flex flex-col sm:flex-row gap-4 pt-2">
                             <Link
                                 href="/explore"
                                 className="group inline-flex items-center justify-center gap-2.5 px-8 py-4 text-white font-bold text-base rounded-2xl transition-all hover:scale-[1.03] hover:shadow-2xl"
@@ -175,20 +143,6 @@ export function Hero() {
                                 <Compass className="w-5 h-5 text-orange-500" />
                                 Create a Mentor Persona
                             </Link>
-                        </div>
-
-                        {/* Trust indicators — qualitative, no fake numbers */}
-                        <div className="flex flex-wrap items-center gap-4 pt-2">
-                            {[
-                                'Natural voice & text chat',
-                                'Secure & private conversations',
-                                'Powered by real expertise'
-                            ].map((text) => (
-                                <div key={text} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500">
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                                    {text}
-                                </div>
-                            ))}
                         </div>
                     </div>
 
@@ -229,25 +183,25 @@ export function Hero() {
                         {/* Floating Card 1 — Dr. Anjali Desai (Mentor persona) */}
                         <div
                             ref={card1Ref}
-                            className="absolute -bottom-5 -left-4 md:-left-8 bg-white/95 backdrop-blur-xl p-4 sm:p-5 rounded-[1.8rem] max-w-[260px] sm:max-w-xs"
-                            style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.13)', border: '1.5px solid rgba(255,255,255,0.95)' }}
+                            className="absolute -bottom-3 -left-2 md:-left-6 bg-white/95 backdrop-blur-xl p-2.5 sm:p-3 rounded-2xl max-w-[210px] sm:max-w-[230px]"
+                            style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.12)', border: '1.5px solid rgba(255,255,255,0.95)' }}
                         >
-                            <div className="flex items-center gap-3.5">
+                            <div className="flex items-center gap-2.5 sm:gap-3">
                                 <div className="relative shrink-0">
-                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl rotate-2 flex items-center justify-center shadow-lg"
-                                        style={{ background: 'linear-gradient(135deg, #fbbf24, #f97316)', boxShadow: '0 8px 20px rgba(251,146,60,0.4)' }}>
-                                        <GraduationCap className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl rotate-1 flex items-center justify-center shadow-md"
+                                        style={{ background: 'linear-gradient(135deg, #fbbf24, #f97316)', boxShadow: '0 6px 16px rgba(251,146,60,0.35)' }}>
+                                        <GraduationCap className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white" />
                                     </div>
-                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full"
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-white rounded-full"
                                         style={{ background: 'linear-gradient(135deg, #f97316, #ec4899)' }} />
                                 </div>
                                 <div className="min-w-0">
-                                    <div className="flex items-center gap-1.5 mb-0.5">
-                                        <span className="text-sm sm:text-[15px] font-bold text-gray-900 truncate">Dr. Anjali Desai</span>
-                                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                    <div className="flex items-center gap-1 mb-0.5">
+                                        <span className="text-xs sm:text-[13px] font-bold text-gray-900 truncate">Dr. Anjali Desai</span>
+                                        <CheckCircle2 className="w-3 h-3 text-blue-500 shrink-0" />
                                     </div>
-                                    <div className="text-[11px] sm:text-xs text-gray-500 font-medium truncate">CS Professor · IIT Bombay</div>
-                                    <span className="mt-1.5 inline-block text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full">
+                                    <div className="text-[10px] sm:text-[11px] text-gray-500 font-medium truncate">CS Professor · IIT Bombay</div>
+                                    <span className="mt-1 inline-block text-[9px] sm:text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded-full">
                                         Academic AI Persona
                                     </span>
                                 </div>
@@ -257,24 +211,24 @@ export function Hero() {
                         {/* Floating Card 2 — Pooja Sharma (Chat bubble style) */}
                         <div
                             ref={card2Ref}
-                            className="absolute -top-5 -right-4 md:-right-8 bg-white/95 backdrop-blur-xl p-4 sm:p-5 rounded-[1.8rem] max-w-[260px] sm:max-w-xs"
-                            style={{ boxShadow: '0 20px 50px rgba(0,0,0,0.13)', border: '1.5px solid rgba(255,255,255,0.95)' }}
+                            className="absolute -top-3 -right-2 md:-right-6 bg-white/95 backdrop-blur-xl p-2.5 sm:p-3 rounded-2xl max-w-[210px] sm:max-w-[230px]"
+                            style={{ boxShadow: '0 16px 40px rgba(0,0,0,0.12)', border: '1.5px solid rgba(255,255,255,0.95)' }}
                         >
-                            <div className="flex items-center gap-3.5">
+                            <div className="flex items-center gap-2.5 sm:gap-3">
                                 <div className="relative shrink-0">
-                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl -rotate-2 flex items-center justify-center shadow-lg"
-                                        style={{ background: 'linear-gradient(135deg, #ec4899, #e11d48)', boxShadow: '0 8px 20px rgba(236,72,153,0.4)' }}>
-                                        <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl -rotate-1 flex items-center justify-center shadow-md"
+                                        style={{ background: 'linear-gradient(135deg, #ec4899, #e11d48)', boxShadow: '0 6px 16px rgba(236,72,153,0.35)' }}>
+                                        <MessageCircle className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white" />
                                     </div>
-                                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
                                 </div>
                                 <div className="min-w-0">
-                                    <div className="flex items-center gap-1.5 mb-0.5">
-                                        <span className="text-sm sm:text-[15px] font-bold text-gray-900 truncate">Pooja Sharma</span>
-                                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                    <div className="flex items-center gap-1 mb-0.5">
+                                        <span className="text-xs sm:text-[13px] font-bold text-gray-900 truncate">Pooja Sharma</span>
+                                        <CheckCircle2 className="w-3 h-3 text-blue-500 shrink-0" />
                                     </div>
-                                    <div className="text-[11px] sm:text-xs text-gray-500 font-medium truncate">Staff Tech Lead · Mentor</div>
-                                    <span className="mt-1.5 inline-block text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-100 px-2 py-0.5 rounded-full">
+                                    <div className="text-[10px] sm:text-[11px] text-gray-500 font-medium truncate">Staff Tech Lead · Mentor</div>
+                                    <span className="mt-1 inline-block text-[9px] sm:text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-100 px-1.5 py-0.5 rounded-full">
                                         Career & Tech Persona
                                     </span>
                                 </div>
