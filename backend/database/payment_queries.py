@@ -34,7 +34,8 @@ async def get_monthly_exploration(user_id: str, token: str = None) -> Optional[d
     """Fetch the user's exploration record for the current month."""
     month = _current_month()
     try:
-        client = get_authed_client(token) if token else get_service_client()
+        # Use service client to ensure reliable reads
+        client = get_service_client()
         result = (
             client
             .table("user_monthly_explorations")
@@ -63,7 +64,8 @@ async def upsert_monthly_exploration(
     month = _current_month()
     try:
         existing = await get_monthly_exploration(user_id, token=token)
-        client = get_authed_client(token) if token else get_service_client()
+        # Use service client to ensure inserts and updates succeed reliably
+        client = get_service_client()
 
         if existing:
             explored: list = existing.get("mentors_explored") or []
@@ -102,7 +104,8 @@ async def upsert_monthly_exploration(
 async def get_user_bot_access(user_id: str, bot_id: str, token: str = None) -> Optional[dict]:
     """Fetch a user's access record for a specific bot."""
     try:
-        client = get_authed_client(token) if token else get_service_client()
+        # Use service client — caller has verified JWT at HTTP layer
+        client = get_service_client()
         result = (
             client
             .table("user_bot_access")
@@ -121,7 +124,8 @@ async def get_user_bot_access(user_id: str, bot_id: str, token: str = None) -> O
 async def get_all_user_bot_accesses(user_id: str, token: str = None) -> dict[str, dict]:
     """Fetch ALL access records for a user, returning a map of {bot_id: access_dict}. Solves N+1 queries."""
     try:
-        client = get_authed_client(token) if token else get_service_client()
+        # Use service client to bypass RLS edge cases and guarantee all user records are returned
+        client = get_service_client()
         result = (
             client
             .table("user_bot_access")
@@ -134,6 +138,33 @@ async def get_all_user_bot_accesses(user_id: str, token: str = None) -> dict[str
     except Exception as e:
         logger.error("[PayDB] get_all_user_bot_accesses failed: %s", e)
         return {}
+
+
+async def renew_free_trial_access(
+    access_id: str,
+    expires_at: datetime,
+    credits_allowed: int = 40,
+) -> Optional[dict]:
+    """
+    Renew or extend an existing free trial access record so it doesn't expire prematurely.
+    """
+    try:
+        client = get_service_client()
+        result = (
+            client
+            .table("user_bot_access")
+            .update({
+                "access_expires_at": expires_at.isoformat(),
+                "credits_allowed": credits_allowed,
+                "status": "free_trial",
+            })
+            .eq("id", access_id)
+            .execute()
+        )
+        return (result.data[0] if result and hasattr(result, "data") and result.data else None)
+    except Exception as e:
+        logger.error("[PayDB] renew_free_trial_access failed: %s", e)
+        return None
 
 
 async def create_free_trial_access(

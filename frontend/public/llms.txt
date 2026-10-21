@@ -1,0 +1,24 @@
+# AskMentor
+
+> AskMentor is an AI-powered mentorship platform enabling students, engineers, and researchers to interact 24/7 with digital clones of professors, tech leads, and alumni founders. The platform supports real-time text streaming and vernacular voice interactions grounded in verified documents through RAG.
+
+## Core Capabilities / Main Sections
+* **[Explore AI Personas](https://www.askmentor.online/explore)**: Search and discover verified mentor bots across engineering, academia, career development, and startups.
+* **[Platform Use Cases](https://www.askmentor.online/use-cases)**: In-depth breakdowns of real-world workflows for university exam prep, mock placements, system design reviews, and thesis research.
+* **[About AskMentor](https://www.askmentor.online/about)**: Mission, architecture, RAG vector retrieval standards, and core engineering philosophy.
+* **[Billing & Credits](https://www.askmentor.online/billing)**: Transparent pay-as-you-go credit structure, Cashfree payment gateway integration, and 70% creator revenue sharing.
+* **[Creator Studio / Onboarding](https://www.askmentor.online/signup)**: Upload resumes, syllabi, or research papers to train and deploy a customized mentor persona in minutes.
+
+## Key Information & Crucial Facts
+* **Architecture**: Hybrid Next.js 15 App Router frontend paired with a high-throughput Python FastAPI backend.
+* **RAG & Search Engine**: Document parsing via PyMuPDF and EasyOCR; vector search using Supabase PostgreSQL pgvector with 768-dimensional Nomic embeddings (nomic-embed-text-v1.5).
+* **LLM Reasoning**: Sub-second text streaming using Groq-accelerated Llama 3.3 70B Versatile and DeepSeek R1 Distill for deep technical problem solving.
+* **Voice & Vernacular Support**: Real-time voice talk mode with low-latency audio pipelines and Sarvam AI Indian vernacular speech recognition and TTS.
+* **Student Access**: Free community access available whenever mentor bot owners enable zero-credit usage; optional low-cost pay-as-you-go credits for premium creator bots.
+* **Mentor Monetization**: 70% direct revenue payout to mentor creators via integrated automated payout ledger; zero lock-in subscriptions.
+* **Data Security & Privacy**: Strict tenant isolation on Supabase PostgreSQL; student chat transcripts and uploaded creator files are encrypted and never used for foundation model training without consent.
+
+## Navigation & Discovery
+* [Full Site Map / Index](https://www.askmentor.online/sitemap.xml): Machine-readable XML sitemap of all public URLs.
+* [Full LLM Knowledge Base](https://www.askmentor.online/llms-full.txt): Deep technical specification, API endpoint contracts, and comprehensive platform documentation for AI agents.
+* [Contact Support](https://www.askmentor.online/contact): Direct assistance for institutional onboarding, campus partnerships, and mentor verification.

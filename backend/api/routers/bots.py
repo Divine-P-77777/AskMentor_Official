@@ -90,7 +90,8 @@ async def list_public_bots(
         from backend.database.payment_queries import get_all_user_bot_accesses, get_monthly_exploration
         from datetime import datetime, timezone
         monthly_exp = await get_monthly_exploration(user["id"], token=token)
-        free_explorations_used = len(monthly_exp.get("mentors_explored", [])) if monthly_exp else 0
+        explored_bot_ids = set(monthly_exp.get("mentors_explored", [])) if monthly_exp else set()
+        free_explorations_used = len(explored_bot_ids)
         now = datetime.now(tz=timezone.utc)
         
         # Fetch ALL access records in one query to avoid N+1 issue
@@ -98,11 +99,35 @@ async def list_public_bots(
         
         for bot in bots:
             bot["free_explorations_used"] = free_explorations_used
-            # Check if user has active access
-            access = access_map.get(str(bot["id"]))
+            bot_id_str = str(bot["id"])
+            is_owner = (str(bot.get("owner_id")) == str(user["id"]))
+            
+            if is_owner:
+                bot["is_unlocked"] = True
+                continue
+
+            is_free = bot.get("is_free", True)
+            is_explored_this_month = bot_id_str in explored_bot_ids
+            access = access_map.get(bot_id_str)
+            
+            # If unlocked via this month's free exploration:
+            if is_explored_this_month:
+                # If free bot, it is always unlocked for this entire calendar month!
+                if is_free:
+                    bot["is_unlocked"] = True
+                    continue
+                # If paid bot tried via monthly exploration, check credits
+                if access:
+                    credits_rem = access.get("credits_allowed", 0) - access.get("credits_used", 0)
+                    bot["is_unlocked"] = credits_rem > 0
+                    continue
+                else:
+                    bot["is_unlocked"] = True
+                    continue
+
+            # Check if user has active access record (paid unlock or active trial)
             if access:
                 credits_remaining = access.get("credits_allowed", 0) - access.get("credits_used", 0)
-                # Also check expiry — expired trials must re-lock
                 expires_at_raw = access.get("access_expires_at")
                 if expires_at_raw:
                     try:
@@ -115,11 +140,12 @@ async def list_public_bots(
                 else:
                     is_expired = False
                 
-                bot["is_unlocked"] = credits_remaining > 0 and not is_expired
-                print(f"[DEBUG] bot {bot['name']}: access exists. credits_rem={credits_remaining}, is_expired={is_expired} => is_unlocked={bot['is_unlocked']}")
+                if is_free:
+                    bot["is_unlocked"] = not is_expired
+                else:
+                    bot["is_unlocked"] = credits_remaining > 0 and not is_expired
             else:
                 bot["is_unlocked"] = False
-                print(f"[DEBUG] bot {bot['name']}: no access record found.")
     
     return bots
 

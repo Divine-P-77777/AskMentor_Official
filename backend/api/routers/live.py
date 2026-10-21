@@ -197,6 +197,7 @@ from backend.payments.pricing_config import (
     FREE_EXPLORATION,
     CREDIT_COSTS,
     DEFAULT_CREDIT_COST,
+    get_monthly_trial_expiry,
 )
 from datetime import datetime, timedelta, timezone
 
@@ -256,7 +257,8 @@ async def _run_voice_turn(
                         await manager.send_json(session_id, error_event("You've explored your monthly limit of mentors. Unlock to continue.", "EXPLORATION_LIMIT_REACHED"))
                         return
 
-                    trial_expires = now + timedelta(days=7)
+                    # Grant free trial access (valid for current month / at least 30 days)
+                    trial_expires = get_monthly_trial_expiry(now)
                     access = await create_free_trial_access(
                         user_id=user_id,
                         bot_id=bot_id,

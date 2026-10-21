@@ -27,7 +27,8 @@ import { UnlockModal } from "@/components/ui/UnlockModal";
 import { ProfileModal } from "@/components/ui/ProfileModal";
 import { toast } from "react-toastify";
 
-import { useRouter } from "next/navigation"
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function ExplorePage() {
   const [bots, setBots] = useState<Bot[]>([]);
@@ -72,6 +73,16 @@ export default function ExplorePage() {
       }
     };
     fetchBots();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        fetchBots();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleShare = (e: React.MouseEvent, bot: Bot) => {

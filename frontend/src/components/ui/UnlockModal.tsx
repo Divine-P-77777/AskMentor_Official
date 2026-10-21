@@ -35,16 +35,9 @@ export function UnlockModal({ isOpen, onClose, bot, onUnlocked }: UnlockModalPro
       return;
     }
 
-    // Free bot — check monthly quota before proceeding
-    if (freeUsed >= freeLimit) {
-      showError(`You have already unlocked ${freeLimit} free mentors this month.`);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       if (isFree) {
-        // Explicitly unlock the free bot (consumes quota and creates DB record)
+        // Explicitly unlock the free bot (consumes quota or renews access)
         await import('@/services/api').then(m => m.api.unlockFreeBot(bot.id));
       }
     } catch (e: any) {

@@ -16,7 +16,9 @@ Structure:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict
+from datetime import datetime, timezone, timedelta
+import calendar
+from typing import Dict, Optional
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +80,21 @@ class FreeExplorationConfig:
 
 
 FREE_EXPLORATION = FreeExplorationConfig()
+
+
+def get_monthly_trial_expiry(now: Optional[datetime] = None) -> datetime:
+    """
+    Returns the expiry for monthly free trial / exploration access.
+    Guarantees access through at least the end of the current calendar month
+    (at 23:59:59 UTC), or 30 days from now (whichever is greater),
+    preventing mid-month premature lockouts.
+    """
+    if now is None:
+        now = datetime.now(tz=timezone.utc)
+    _, last_day = calendar.monthrange(now.year, now.month)
+    month_end = datetime(now.year, now.month, last_day, 23, 59, 59, 999999, tzinfo=timezone.utc)
+    min_duration = now + timedelta(days=30)
+    return max(month_end, min_duration)
 
 
 # ---------------------------------------------------------------------------

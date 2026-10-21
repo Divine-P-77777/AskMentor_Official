@@ -54,14 +54,14 @@ export function HowItWorks() {
 
     const studentSteps = [
         { icon: Search, title: 'Browse Mentors', description: 'Explore AI bots created by alumni, professors, and professionals across different fields.', color: 'from-orange-400 to-amber-500', num: '#f97316' },
-        { icon: MessageCircle, title: 'Start Chatting', description: 'Choose text or voice mode and begin your conversation. Ask anything!', color: 'from-pink-400 to-rose-500', num: '#ec4899' },
-        { icon: Sparkles, title: 'Get Personalized Advice', description: 'Receive guidance based on real experiences and expertise. Learn and grow!', color: 'from-rose-400 to-pink-500', num: '#e11d48' }
+        { icon: MessageCircle, title: 'Start Chatting (Often Free)', description: 'Choose text or voice mode. Many mentors provide 100% free community access, and paid bots use simple pay-as-you-go credits!', color: 'from-pink-400 to-rose-500', num: '#ec4899' },
+        { icon: Sparkles, title: 'Get Personalized Advice', description: 'Receive guidance based on real experiences and expertise. Learn and grow without recurring subscription locks!', color: 'from-rose-400 to-pink-500', num: '#e11d48' }
     ];
 
     const creatorSteps = [
         { icon: Upload, title: 'Share Your Story', description: 'Upload your resume, research papers, or documents that represent your journey.', color: 'from-orange-400 to-amber-500', num: '#f97316' },
-        { icon: Settings, title: 'Define Your Persona', description: 'Set your personality, expertise areas, and the way you want to help others.', color: 'from-pink-400 to-rose-500', num: '#ec4899' },
-        { icon: Rocket, title: 'Make an Impact', description: 'Your AI mentor goes live! Help countless students while you focus on your work.', color: 'from-amber-400 to-orange-500', num: '#f59e0b' }
+        { icon: Settings, title: 'Define Your Persona', description: 'Set your tone, expertise, and choose whether to offer open-access or set an unlock rate.', color: 'from-pink-400 to-rose-500', num: '#ec4899' },
+        { icon: Rocket, title: 'Make an Impact & Earn', description: 'Your AI mentor goes live! Guide hundreds of learners 24/7 while getting an honest, warm opportunity to earn from your time.', color: 'from-amber-400 to-orange-500', num: '#f59e0b' }
     ];
 
     return (

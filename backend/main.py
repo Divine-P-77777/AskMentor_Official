@@ -7,7 +7,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-# ─── Logging ──────────────────────────────────────────────────────────────────
+
 import asyncio
 import logging
 import httpx
@@ -21,7 +21,6 @@ logging.basicConfig(level=log_level, format="%(levelname)s:%(name)s: %(message)s
 for noisy_logger in ("hpack", "httpcore", "httpx", "h2", "urllib3"):
     logging.getLogger(noisy_logger).setLevel(logging.WARNING)
 
-# ─── FastAPI & Middleware ──────────────────────────────────────────────────────
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -43,7 +42,7 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -64,13 +63,12 @@ app.include_router(live.router,      prefix="/api/live",      tags=["Live Intera
 app.include_router(payments.router,  prefix="/api/payments",  tags=["Payments"])
 app.include_router(resume.router,    prefix="/api/resume",    tags=["Resume Review"])
 
-# ─── Health Check ─────────────────────────────────────────────────────────────
 @app.get("/health", tags=["Health"])
 async def health_check():
     """Health check endpoint."""
     return {"status": "ok", "app": settings.APP_NAME, "version": settings.APP_VERSION}
 
-# ─── Render Self-Ping (keeps free-tier alive) ─────────────────────────────────
+# Render Self-Ping 
 PING_INTERVAL = 14 * 60  # 14 minutes
 
 def get_backend_url() -> str:
@@ -96,7 +94,7 @@ async def self_ping():
                 logging.error(f"Ping failed to {url}: {e}")
             await asyncio.sleep(PING_INTERVAL)
 
-# ─── Lifecycle Events ─────────────────────────────────────────────────────────
+#  Lifecycle Events 
 @app.on_event("startup")
 async def startup_event():
     asyncio.create_task(self_ping())

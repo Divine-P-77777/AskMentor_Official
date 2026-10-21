@@ -28,6 +28,7 @@ from backend.payments.pricing_config import (
     FREE_EXPLORATION,
     CREDIT_COSTS,
     DEFAULT_CREDIT_COST,
+    get_monthly_trial_expiry,
 )
 from backend.rag.retrieval import retrieve_similar_chunks
 from backend.rag.context_builder import build_context, build_managed_context
@@ -134,8 +135,8 @@ async def chat_with_bot(
                         }
                     )
 
-                # Grant free trial access
-                trial_expires = now + timedelta(days=7)  # Free trial lasts 7 days
+                # Grant free trial access (valid for current month / at least 30 days)
+                trial_expires = get_monthly_trial_expiry(now)
                 access = await create_free_trial_access(
                     user_id=user_id,
                     bot_id=bot_id,

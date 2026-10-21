@@ -18,9 +18,9 @@ export function PersonaOrganization() {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "AskMentor",
-    "url": "https://personabot.vercel.app",
-    "logo": "https://personabot.vercel.app/logo.png",
-    "image": "https://personabot.vercel.app/og-image.png",
+    "url": "https://www.askmentor.online",
+    "logo": "https://www.askmentor.online/logo.png",
+    "image": "https://www.askmentor.online/og-image.png",
     "sameAs": [
       "https://twitter.com/askmentor",
       "https://github.com/askmentor"
@@ -36,11 +36,11 @@ export function PersonaOrganization() {
   const searchAction = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "url": "https://personabot.vercel.app",
+    "url": "https://www.askmentor.online",
     "name": "AskMentor",
     "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://personabot.vercel.app/explore?q={search_term_string}",
+      "target": "https://www.askmentor.online/explore?q={search_term_string}",
       "query-input": "required name=search_term_string"
     }
   };
@@ -53,13 +53,13 @@ export function PersonaOrganization() {
         "@type": "ListItem",
         "position": 1,
         "name": "AskMentor",
-        "item": "https://personabot.vercel.app"
+        "item": "https://www.askmentor.online"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Explore Experts",
-        "item": "https://personabot.vercel.app/explore"
+        "item": "https://www.askmentor.online/explore"
       }
     ]
   };
@@ -68,10 +68,10 @@ export function PersonaOrganization() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "AskMentor | Your AI Mentor",
-    "url": "https://personabot.vercel.app",
+    "url": "https://www.askmentor.online",
     "image": {
       "@type": "ImageObject",
-      "url": "https://personabot.vercel.app/og-image.png",
+      "url": "https://www.askmentor.online/og-image.png",
       "width": "1200",
       "height": "630"
     }
@@ -91,11 +91,11 @@ export function WebsiteStructuredData() {
   const data = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "url": "https://personabot.vercel.app",
+    "url": "https://www.askmentor.online",
     "name": "AskMentor",
     "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://personabot.vercel.app/explore?q={search_term_string}",
+      "target": "https://www.askmentor.online/explore?q={search_term_string}",
       "query-input": "required name=search_term_string"
     }
   };
@@ -117,11 +117,11 @@ export function WebsiteStructuredData() {
   const webPageData = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "url": "https://personabot.vercel.app",
+    "url": "https://www.askmentor.online",
     "name": "AskMentor | Your AI Mentor",
     "primaryImageOfPage": {
       "@type": "ImageObject",
-      "url": "https://personabot.vercel.app/og-image.png",
+      "url": "https://www.askmentor.online/og-image.png",
       "width": "1200",
       "height": "630"
     }

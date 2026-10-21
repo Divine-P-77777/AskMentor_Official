@@ -21,6 +21,7 @@ from backend.database.payment_queries import (
 from backend.payments.pricing_config import (
     FREE_EXPLORATION,
     CREDIT_COSTS,
+    get_monthly_trial_expiry,
 )
 from backend.rag.processors.pdf_processor import extract_text_from_pdf
 from backend.rag.processors.image_processor import extract_text_from_image
@@ -125,8 +126,8 @@ async def upload_and_review_resume(
                         }
                     )
 
-                # Grant free trial access
-                trial_expires = now + timedelta(days=7)
+                # Grant free trial access (valid for current month / at least 30 days)
+                trial_expires = get_monthly_trial_expiry(now)
                 access = await create_free_trial_access(
                     user_id=user_id,
                     bot_id=bot_id,
